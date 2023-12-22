@@ -1,0 +1,84 @@
+# Reading Data
+# Load data from a CSV file named 'Presion_Orig.csv' into a DataFrame 'Presion.Orig'.
+# 'header = T' indicates that the first row of the CSV contains column headers.
+Presion.Orig = read.csv("Presion_Orig.csv", header = T)
+
+# Fitting a Generalized Linear Model (GLM)
+# Perform logistic regression with 'Coronarios' as the response variable and
+# 'Diastolica' as the explanatory variable. The 'family=binomial' parameter
+# specifies a logistic regression model.
+Ajuste.Presion.Orig <- glm(Coronarios ~ Diastolica, data = Presion.Orig, family = binomial)
+
+# Model Summary
+# Display a summary of the logistic regression model, showing coefficients,
+# statistical significance, and other diagnostics.
+summary(Ajuste.Presion.Orig)
+
+# Fitted Values
+# Calculate the fitted values (predicted probabilities) of 'Coronarios' from the model.
+fitted.values(Ajuste.Presion.Orig)
+
+# Hosmer-Lemeshow Goodness-of-Fit Test
+# Perform the Hosmer-Lemeshow test to evaluate the goodness-of-fit of the model
+# by comparing the observed outcomes with the predicted probabilities.
+hoslem.test(Presion.Orig$Coronarios, fitted.values(Ajuste.Presion.Orig))
+
+# Storing and Accessing Hosmer-Lemeshow Test Results
+# Repeat the Hosmer-Lemeshow test and store the results in 'Bondad.Hosmer.No.Agrup',
+# then access the observed test results.
+Bondad.Hosmer.No.Agrup <- hoslem.test(Presion.Orig$Coronarios, fitted.values(Ajuste.Presion.Orig))
+Bondad.Hosmer.No.Agrup$observed
+
+# Residual Analysis
+# Calculate Pearson and Deviance residuals of the model. Residuals are the differences
+# between observed and predicted values and help in diagnosing model fit.
+residuals(Ajuste.Presion.Orig, type = "pearson")
+residuals(Ajuste.Presion.Orig, type = "deviance")
+
+# Influence Measures
+# Calculate various influence measures to identify data points that might disproportionately
+# affect the model's performance.
+hatvalues(Ajuste.Presion.Orig)
+rstandard(Ajuste.Presion.Orig, type = "pearson")
+rstandard(Ajuste.Presion.Orig, type = "deviance")
+cooks.distance(Ajuste.Presion.Orig)
+
+# Binary Classification
+# Create a binary classification (1 or 0) based on the model's predicted probabilities,
+# using 0.5 as a cutoff threshold.
+Categoria.Pred <- ifelse(fitted.values(Ajuste.Presion.Orig) >= 0.5, 1, 0)
+
+# Confusion Matrix
+# Create a confusion matrix to compare the actual 'Coronarios' values against the predicted categories.
+table(Presion.Orig$Coronarios, Categoria.Pred)
+
+# Alternative Threshold for Classification
+# Create an alternative binary classification using a different threshold (0.13).
+Categoria.Pred.013 <- ifelse(fitted.values(Ajuste.Presion.Orig) >= 0.13, 1, 0)
+
+# Alternative Confusion Matrix
+# Create another confusion matrix for the alternative classification.
+table(Presion.Orig$Coronarios, Categoria.Pred.013)
+
+# ROC Curve Analysis
+# Load the 'pROC' library for ROC curve analysis. Then, generate and plot a ROC curve
+# using the model's predicted probabilities. The ROC curve assesses the diagnostic ability
+# of the binary classifier.
+library(pROC)
+CurvaROC <- roc(Presion.Orig$Coronarios, fitted.values(Ajuste.Presion.Orig))
+plot(CurvaROC)
+
+# Reformatting Data for Further Analysis
+# Create a new data frame for further analysis by expanding the original data based on counts
+# of 'Coronarios0' and 'Coronarios1', preparing it for detailed evaluation.
+Datos.Orig.Explicativa <- c(rep(Presion[,1], Presion[,2]), rep(Presion[,1], Presion[,3]))
+Datos.Orig.Respuesta <- c(rep(seq(0, 0, length = nrow(Presion)), Presion[,2]),
+                          rep(seq(1, 1, length = nrow(Presion)), Presion[,3]))
+Datos.Orig <- data.frame(Datos.Orig.Explicativa, Datos.Orig.Respuesta)
+names(Datos.Orig) <- c("Explicativa", "Respuesta")
+
+# Calculating Probabilities for the Expanded Data
+# Calculate probabilities for the expanded dataset based on the fitted values from the model.
+Probabilidades.Orig <- c(rep(fitted.values(Ajuste.Presion), Presion[,2]),
+                         rep(fitted.values(Ajuste.Presion), Presion[,3]))
+Probabilidades.Orig
